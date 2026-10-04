@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { ImageIcon } from "@sanity/icons/Image";
 import { LinkIcon } from "@sanity/icons/Link";
-import { Badge, Box, Card, Code, Flex, Heading, Inline, Label, Stack, Text } from "@sanity/ui";
+import { Badge, Box, Card, Code, Flex, Grid, Heading, Inline, Label, Stack, Text } from "@sanity/ui";
 import type { FieldDef, TypeDef } from "./evaluate-schema";
 import { assetUrl } from "./image-input";
 import { asObj, asStr, isHidden, listOptions, startCase, type Obj, type Registry, type Value } from "./field-utils";
@@ -132,6 +132,22 @@ function ValuePreview({ field, value, registry }: { field: FieldDef; value: Valu
               <Badge key={i}>{asStr(it)}</Badge>
             ))}
           </Inline>
+        );
+      }
+      const memberOf = (item: Value) => {
+        const t = asObj(item)._type;
+        return field.of?.find((m) => m.name === t || m.type === t) ?? field.of?.[0];
+      };
+      // A gallery: arrays whose items are all images render as an image grid.
+      if (items.every((it) => memberOf(it)?.type === "image")) {
+        return (
+          <Grid columns={[1, 2, 3]} gap={3}>
+            {items
+              .filter((it) => assetUrl(it))
+              .map((it, i) => (
+                <ValuePreview key={asStr(asObj(it)._key) || i} field={memberOf(it)!} value={it} registry={registry} />
+              ))}
+          </Grid>
         );
       }
       return (

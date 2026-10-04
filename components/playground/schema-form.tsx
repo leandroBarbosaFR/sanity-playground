@@ -310,6 +310,10 @@ function PortableTextInput({ field, value, onChange }: { field: FieldDef; value:
   );
 }
 
+// Array members of these types are stored as plain values; everything else
+// (image, file, reference, object, custom types) is stored as an object with a `_key`.
+const PRIMITIVE_TYPES = new Set(["string", "text", "number", "boolean", "date", "datetime", "url", "email"]);
+
 function ArrayInput({ field, value, onChange, document, registry }: Omit<FieldProps, "parent">) {
   const members = field.of ?? [];
   if (members.some((m) => m.type === "block")) {
@@ -324,9 +328,8 @@ function ArrayInput({ field, value, onChange, document, registry }: Omit<FieldPr
   const update = (index: number, next: Value) => onChange(items.map((it, i) => (i === index ? next : it)));
   const remove = (index: number) => onChange(items.filter((_, i) => i !== index));
   const add = (member: FieldDef) => {
-    const isObject = member.type === "object" || registry.get(member.type)?.fields || member.fields;
     const key = crypto.randomUUID().slice(0, 8);
-    onChange([...items, isObject ? { _key: key, _type: member.name ?? member.type } : ""]);
+    onChange([...items, PRIMITIVE_TYPES.has(member.type) ? "" : { _key: key, _type: member.name ?? member.type }]);
   };
 
   return (
