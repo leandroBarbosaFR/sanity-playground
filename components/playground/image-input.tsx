@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ClipboardEvent, type DragEvent } from "react";
+import { useEffect, useRef, useState, type ClipboardEvent, type DragEvent } from "react";
 import { DocumentIcon } from "@sanity/icons/Document";
 import { ImageIcon } from "@sanity/icons/Image";
 import { LinkIcon } from "@sanity/icons/Link";
@@ -46,12 +46,21 @@ export function ImageInput({
   const [urlMode, setUrlMode] = useState(false);
   const [urlDraft, setUrlDraft] = useState("");
   const [error, setError] = useState<string>();
+  // Track only blob URLs created by this input and release them on unmount.
+  const ownedUrls = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const urls = ownedUrls.current;
+    return () => { for (const item of urls) URL.revokeObjectURL(item); urls.clear(); };
+  }, []);
 
   const current = asObj(value);
   const url = assetUrl(value);
 
   const replace = (next: LocalAsset | undefined) => {
-    if (url.startsWith("blob:")) URL.revokeObjectURL(url);
+    if (ownedUrls.current.has(url)) {
+      URL.revokeObjectURL(url);
+      ownedUrls.current.delete(url);
+    }
     // Keep sub-fields like `alt` or `caption` when the asset changes.
     const rest = Object.fromEntries(
       Object.entries(current).filter(([key]) => !["_previewUrl", "asset", "_fileName"].includes(key)),
@@ -66,7 +75,9 @@ export function ImageInput({
       return;
     }
     setError(undefined);
-    replace(toAsset(kind, URL.createObjectURL(file), file.name));
+    const objectUrl = URL.createObjectURL(file);
+    ownedUrls.current.add(objectUrl);
+    replace(toAsset(kind, objectUrl, file.name));
   };
 
   const onDrop = (e: DragEvent) => {
