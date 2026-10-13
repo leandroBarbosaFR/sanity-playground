@@ -1,37 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sanity Playground
+
+**Build, preview, and explore Sanity schemas directly in your browser.**
+
+[Visit Sanity Playground](https://www.sanity-playground.com/)
+
+## What is Sanity Playground?
+
+Sanity Playground is an interactive environment designed to make exploring and experimenting with Sanity easier.
+
+Whether you're a developer learning Sanity, an experienced user testing schema ideas, or someone introducing Sanity to a team or client, Sanity Playground provides a simple way to demonstrate how Sanity Studio works.
+
+Write your schema on one side and instantly see how it translates into a Studio form on the other.
+
+No project setup required.
+
+## Features
+
+- **Interactive Schema Editor:** Write and experiment with Sanity schemas directly in your browser.
+- **Live Studio Preview:** See how your schema fields appear inside Sanity Studio.
+- **Rapid Prototyping:** Test content structures and experiment with field configurations before implementing them in your project.
+- **Learning and Demonstrations:** Introduce Sanity to colleagues, clients, and newcomers through a hands-on experience.
+- **No Setup Required:** Explore Sanity without creating a project or configuring a local development environment.
+
+## Who is it for?
+
+**Developers:** Experiment with schemas and validate content modelling ideas.
+
+**Beginners:** Discover how Sanity schemas work through a practical, visual experience.
+
+**Agencies and Teams:** Demonstrate Sanity's flexibility to clients and colleagues without building a complete project.
 
 ## Getting Started
 
-First, run the development server:
+1. Visit [sanity-playground.com](https://www.sanity-playground.com/).
+2. Write or modify a Sanity schema in the editor.
+3. See the corresponding Studio form in the live preview.
+4. Experiment with different fields and content structures.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Built With
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Next.js
+- React
+- TypeScript
+- Sanity Studio
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Feedback and Contributions
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Sanity Playground is an independent project built for the Sanity developer community.
 
-## Learn More
+Feedback, suggestions, and contributions are welcome.
 
-To learn more about Next.js, take a look at the following resources:
+[View the GitHub Repository](https://github.com/leandroBarbosaFR/sanity-playground)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Disclaimer
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# sanity-playground
+Sanity Playground is an independent community tool and is not an official Sanity product.
