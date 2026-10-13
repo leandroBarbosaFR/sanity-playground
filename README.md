@@ -32,7 +32,17 @@ No project setup required.
 
 **Agencies and Teams:** Demonstrate Sanity's flexibility to clients and colleagues without building a complete project.
 
-## Getting Started
+**Build, preview, and explore Sanity schemas directly in your browser.**
+
+[Visit Sanity Playground](https://www.sanity-playground.com/)
+
+## What is Sanity Playground?
+
+Sanity Playground is an interactive environment designed to make exploring and experimenting with Sanity easier.
+
+Whether you're a developer learning Sanity, an experienced user testing schema ideas, or someone introducing Sanity to a team or client, Sanity Playground provides a simple way to demonstrate how Sanity Studio works.
+
+Write your schema on one side and instantly see how it translates into a Studio form on the other.
 
 1. Visit [sanity-playground.com](https://www.sanity-playground.com/).
 2. Write or modify a Sanity schema in the editor.
