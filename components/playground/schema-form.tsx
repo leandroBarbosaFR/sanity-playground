@@ -2,13 +2,9 @@
 
 import { useState, type ReactNode } from "react";
 import { AddIcon } from "@sanity/icons/Add";
-import { BoldIcon } from "@sanity/icons/Bold";
-import { ItalicIcon } from "@sanity/icons/Italic";
 import { LinkIcon } from "@sanity/icons/Link";
-import { OlistIcon } from "@sanity/icons/Olist";
 import { SearchIcon } from "@sanity/icons/Search";
 import { TrashIcon } from "@sanity/icons/Trash";
-import { UlistIcon } from "@sanity/icons/Ulist";
 import {
   Box,
   Button,
@@ -262,10 +258,7 @@ function FieldInput({ field, value, onChange, document, registry }: FieldProps) 
   }
 }
 
-function PortableTextInput({ field, value, onChange }: { field: FieldDef; value: Value; onChange: (v: Value) => void }) {
-  const block = field.of?.find((m) => m.type === "block");
-  const styles = block?.styles ?? [{ title: "Normal", value: "normal" }, { title: "Heading 2", value: "h2" }, { title: "Heading 3", value: "h3" }, { title: "Quote", value: "blockquote" }];
-  const lists = block?.lists ?? [{ title: "Bullet", value: "bullet" }, { title: "Numbered", value: "number" }];
+function PortableTextInput({ value, onChange }: { value: Value; onChange: (v: Value) => void }) {
   const blocks = Array.isArray(value) ? (value as { children?: { text?: string }[] }[]) : [];
   const text = blocks.map((b) => b.children?.map((c) => c.text ?? "").join("") ?? "").join("\n\n");
 
@@ -273,20 +266,7 @@ function PortableTextInput({ field, value, onChange }: { field: FieldDef; value:
     <Card border radius={2} overflow="hidden">
       <Card borderBottom padding={1} tone="transparent">
         <Flex gap={1} align="center" wrap="wrap">
-          <Box style={{ width: 140 }}>
-            <Select fontSize={1} padding={2} defaultValue={styles[0]?.value}>
-              {styles.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.title}
-                </option>
-              ))}
-            </Select>
-          </Box>
-          <Button mode="bleed" icon={BoldIcon} fontSize={1} padding={2} aria-label="Bold" />
-          <Button mode="bleed" icon={ItalicIcon} fontSize={1} padding={2} aria-label="Italic" />
-          {lists.some((l) => l.value === "bullet") && <Button mode="bleed" icon={UlistIcon} fontSize={1} padding={2} aria-label="Bullet list" />}
-          {lists.some((l) => l.value === "number") && <Button mode="bleed" icon={OlistIcon} fontSize={1} padding={2} aria-label="Numbered list" />}
-          <Button mode="bleed" icon={LinkIcon} fontSize={1} padding={2} aria-label="Link" />
+          <Text size={1} muted>Plain-text editing (formatting is not supported in the playground).</Text>
         </Flex>
       </Card>
       <TextArea
@@ -317,7 +297,7 @@ const PRIMITIVE_TYPES = new Set(["string", "text", "number", "boolean", "date", 
 function ArrayInput({ field, value, onChange, document, registry }: Omit<FieldProps, "parent">) {
   const members = field.of ?? [];
   if (members.some((m) => m.type === "block")) {
-    return <PortableTextInput field={field} value={value} onChange={onChange} />;
+    return <PortableTextInput value={value} onChange={onChange} />;
   }
 
   const items = Array.isArray(value) ? value : [];

@@ -101,7 +101,16 @@ export function SchemaPlayground() {
 
   const candidates = schema ? (schema.documents.length > 0 ? schema.documents : schema.types) : [];
   const type = candidates.find((t) => t.name === selectedType) ?? candidates[0];
-  const docValue = useMemo(() => (type ? values[type.name] ?? {} : {}), [type, values]);
+  // Static `initialValue`s show up in the JSON and preview, not just the form.
+  const docValue = useMemo(() => {
+    if (!type) return {};
+    const defaults = Object.fromEntries(
+      (type.fields ?? [])
+        .filter((f) => f.initialValue !== undefined && typeof f.initialValue !== "function")
+        .map((f) => [f.name, f.initialValue]),
+    );
+    return { ...defaults, ...(values[type.name] ?? {}) };
+  }, [type, values]);
   const data = useMemo(() => ({ _type: type?.name, ...docValue }), [type, docValue]);
   const boundaryKey = useMemo(() => ({ Preview: compiled.Preview, data }), [compiled.Preview, data]);
 
