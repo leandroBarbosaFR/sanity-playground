@@ -35,20 +35,8 @@ const VIEWS = [
 ] as const;
 type View = (typeof VIEWS)[number]["id"];
 
-function readStored(key: string, fallback: string) {
-  try {
-    return localStorage.getItem(key) ?? fallback;
-  } catch {
-    return fallback;
-  }
-}
-
 function writeStored(key: string, value: string) {
-  try {
-    localStorage.setItem(key, value);
-  } catch {
-    // Storage can be unavailable (private mode); the editor still works.
-  }
+  window.parent.postMessage({ channel: "sanity-playground-storage", type: "write", key, value }, "*");
 }
 
 function useDebounced<T>(value: T, ms: number) {
@@ -63,9 +51,23 @@ function useDebounced<T>(value: T, ms: number) {
 const errorMessage = (err: unknown) => (err instanceof Error ? err.message : String(err));
 
 export function SchemaPlayground() {
-  const [code, setCode] = useState(() => readStored(STORAGE.schema, STARTER_SCHEMA));
-  const [componentCode, setComponentCode] = useState(() => readStored(STORAGE.component, STARTER_COMPONENT));
-  const [savedComponent, setSavedComponent] = useState(() => readStored(STORAGE.savedComponent, STARTER_COMPONENT));
+  const [code, setCode] = useState(STARTER_SCHEMA);
+  const [componentCode, setComponentCode] = useState(STARTER_COMPONENT);
+  const [savedComponent, setSavedComponent] = useState(STARTER_COMPONENT);
+  const [storageReady, setStorageReady] = useState(false);
+  useEffect(() => {
+    const listener = (event: MessageEvent) => {
+      if (event.source !== window.parent || event.data?.channel !== "sanity-playground-storage" || event.data?.type !== "hydrate") return;
+      const values = event.data.values ?? {};
+      if (typeof values[STORAGE.schema] === "string") setCode(values[STORAGE.schema]);
+      if (typeof values[STORAGE.component] === "string") setComponentCode(values[STORAGE.component]);
+      if (typeof values[STORAGE.savedComponent] === "string") setSavedComponent(values[STORAGE.savedComponent]);
+      setStorageReady(true);
+    };
+    window.addEventListener("message", listener);
+    window.parent.postMessage({ channel: "sanity-playground-storage", type: "read" }, "*");
+    return () => window.removeEventListener("message", listener);
+  }, []);
   const [activeFile, setActiveFile] = useState<FileId>("schema");
   const [values, setValues] = useState<Record<string, Record<string, unknown>>>({});
   const [selectedType, setSelectedType] = useState<string>();
@@ -74,9 +76,9 @@ export function SchemaPlayground() {
   const debouncedCode = useDebounced(code, 250);
   const debouncedComponent = useDebounced(componentCode, 250);
 
-  useEffect(() => writeStored(STORAGE.schema, debouncedCode), [debouncedCode]);
-  useEffect(() => writeStored(STORAGE.component, debouncedComponent), [debouncedComponent]);
-  useEffect(() => writeStored(STORAGE.savedComponent, savedComponent), [savedComponent]);
+  useEffect(() => { if (storageReady) writeStored(STORAGE.schema, debouncedCode); }, [debouncedCode, storageReady]);
+  useEffect(() => { if (storageReady) writeStored(STORAGE.component, debouncedComponent); }, [debouncedComponent, storageReady]);
+  useEffect(() => { if (storageReady) writeStored(STORAGE.savedComponent, savedComponent); }, [savedComponent, storageReady]);
 
   // Keep rendering the last schema that evaluated cleanly while the user types.
   const [lastGood, setLastGood] = useState<EvaluatedSchema>();
@@ -87,7 +89,7 @@ export function SchemaPlayground() {
       return { schema: undefined, error: errorMessage(err) };
     }
   }, [debouncedCode]);
-  if (result.schema && result.schema !== lastGood) setLastGood(result.schema);
+  useEffect(() => { if (result.schema) setLastGood(result.schema); }, [result.schema]);
   const schema = result.schema ?? lastGood;
 
   // The component only changes on save, so a half-typed edit never breaks the preview.
@@ -101,7 +103,11 @@ export function SchemaPlayground() {
 
   const candidates = schema ? (schema.documents.length > 0 ? schema.documents : schema.types) : [];
   const type = candidates.find((t) => t.name === selectedType) ?? candidates[0];
-  const docValue = useMemo(() => (type ? values[type.name] ?? {} : {}), [type, values]);
+  const docValue = useMemo(() => {
+    if (!type) return {};
+    const defaults = Object.fromEntries((type.fields ?? []).filter(f => f.initialValue !== undefined && typeof f.initialValue !== "function").map(f => [f.name, f.initialValue]));
+    return { ...defaults, ...(values[type.name] ?? {}) };
+  }, [type, values]);
   const data = useMemo(() => ({ _type: type?.name, ...docValue }), [type, docValue]);
   const boundaryKey = useMemo(() => ({ Preview: compiled.Preview, data }), [compiled.Preview, data]);
 
