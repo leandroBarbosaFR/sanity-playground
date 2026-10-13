@@ -273,20 +273,7 @@ function PortableTextInput({ field, value, onChange }: { field: FieldDef; value:
     <Card border radius={2} overflow="hidden">
       <Card borderBottom padding={1} tone="transparent">
         <Flex gap={1} align="center" wrap="wrap">
-          <Box style={{ width: 140 }}>
-            <Select fontSize={1} padding={2} defaultValue={styles[0]?.value}>
-              {styles.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.title}
-                </option>
-              ))}
-            </Select>
-          </Box>
-          <Button mode="bleed" icon={BoldIcon} fontSize={1} padding={2} aria-label="Bold" />
-          <Button mode="bleed" icon={ItalicIcon} fontSize={1} padding={2} aria-label="Italic" />
-          {lists.some((l) => l.value === "bullet") && <Button mode="bleed" icon={UlistIcon} fontSize={1} padding={2} aria-label="Bullet list" />}
-          {lists.some((l) => l.value === "number") && <Button mode="bleed" icon={OlistIcon} fontSize={1} padding={2} aria-label="Numbered list" />}
-          <Button mode="bleed" icon={LinkIcon} fontSize={1} padding={2} aria-label="Link" />
+          <Text size={1} muted>Plain-text editing (formatting is not supported in the playground).</Text>
         </Flex>
       </Card>
       <TextArea
