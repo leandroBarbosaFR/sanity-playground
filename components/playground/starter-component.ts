@@ -18,7 +18,6 @@ export default function Preview({ data, urlFor }: Props) {
 
   return (
     <Stack gap={5}>
-      {/* Hero card */}
       <Card radius={4} shadow={2} overflow="hidden">
         {image && (
           <img
@@ -57,24 +56,22 @@ export default function Preview({ data, urlFor }: Props) {
         </Stack>
       </Card>
 
-      {/* Body */}
       {blocks.length > 0 && (
         <Card radius={4} padding={5} border>
           <Stack gap={4}>
-            {blocks.map((block, i) => (
-              <Text key={block._key ?? i} size={2} style={{ lineHeight: 1.7 }}>
-                {block.children?.map((c: any) => c.text).join("")}
+            {blocks.map((block, blockIndex) => (
+              <Text key={block._key ?? blockIndex} size={2} style={{ lineHeight: 1.7 }}>
+                {block.children?.map((child: any) => child.text).join("")}
               </Text>
             ))}
           </Stack>
         </Card>
       )}
 
-      {/* One card per tag */}
       {tags.length > 0 && (
         <Grid columns={[1, 2, 3]} gap={3}>
-          {tags.map((tag, i) => (
-            <Card key={i} radius={3} padding={4} tone="primary" border>
+          {tags.map((tag, tagIndex) => (
+            <Card key={tagIndex} radius={3} padding={4} tone="primary" border>
               <Text size={1} weight="semibold">
                 #{tag}
               </Text>
@@ -83,7 +80,6 @@ export default function Preview({ data, urlFor }: Props) {
         </Grid>
       )}
 
-      {/* SEO snippet */}
       {data.seo?.metaTitle && (
         <Card radius={3} padding={4} tone="transparent" border>
           <Stack gap={2}>

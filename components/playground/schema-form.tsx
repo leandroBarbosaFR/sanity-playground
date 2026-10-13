@@ -38,7 +38,7 @@ function validationMessage(field: FieldDef, value: Value) {
 type FieldProps = {
   field: FieldDef;
   value: Value;
-  onChange: (v: Value) => void;
+  onChange: (nextValue: Value) => void;
   document: Obj;
   parent: Obj;
   registry: Registry;
@@ -85,15 +85,15 @@ function FieldInput({ field, value, onChange, document, registry }: FieldProps) 
       if (options.length > 0 && field.options?.layout === "radio") {
         return (
           <Flex gap={4} direction={field.options.direction === "horizontal" ? "row" : "column"} wrap="wrap">
-            {options.map((o) => (
-              <Flex key={o.value} as="label" align="center" gap={2}>
+            {options.map((option) => (
+              <Flex key={option.value} as="label" align="center" gap={2}>
                 <Radio
                   name={id}
-                  checked={value === o.value}
-                  onChange={() => onChange(o.value)}
+                  checked={value === option.value}
+                  onChange={() => onChange(option.value)}
                   disabled={disabled}
                 />
-                <Text size={1}>{o.title}</Text>
+                <Text size={1}>{option.title}</Text>
               </Flex>
             ))}
           </Flex>
@@ -101,17 +101,17 @@ function FieldInput({ field, value, onChange, document, registry }: FieldProps) 
       }
       if (options.length > 0) {
         return (
-          <Select id={id} value={asStr(value)} onChange={(e) => onChange(e.currentTarget.value || undefined)} disabled={disabled}>
+          <Select id={id} value={asStr(value)} onChange={(event) => onChange(event.currentTarget.value || undefined)} disabled={disabled}>
             <option value="">Select…</option>
-            {options.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.title}
+            {options.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.title}
               </option>
             ))}
           </Select>
         );
       }
-      return <TextInput id={id} value={asStr(value)} onChange={(e) => onChange(e.currentTarget.value)} readOnly={disabled} />;
+      return <TextInput id={id} value={asStr(value)} onChange={(event) => onChange(event.currentTarget.value)} readOnly={disabled} />;
     }
 
     case "text":
@@ -120,7 +120,7 @@ function FieldInput({ field, value, onChange, document, registry }: FieldProps) 
           id={id}
           rows={field.rows ?? 10}
           value={asStr(value)}
-          onChange={(e) => onChange(e.currentTarget.value)}
+          onChange={(event) => onChange(event.currentTarget.value)}
           readOnly={disabled}
         />
       );
@@ -131,7 +131,7 @@ function FieldInput({ field, value, onChange, document, registry }: FieldProps) 
           id={id}
           type="number"
           value={asStr(value)}
-          onChange={(e) => onChange(e.currentTarget.value === "" ? undefined : Number(e.currentTarget.value))}
+          onChange={(event) => onChange(event.currentTarget.value === "" ? undefined : Number(event.currentTarget.value))}
           readOnly={disabled}
         />
       );
@@ -144,7 +144,7 @@ function FieldInput({ field, value, onChange, document, registry }: FieldProps) 
           type={field.type}
           icon={field.type === "url" ? LinkIcon : undefined}
           value={asStr(value)}
-          onChange={(e) => onChange(e.currentTarget.value)}
+          onChange={(event) => onChange(event.currentTarget.value)}
           readOnly={disabled}
         />
       );
@@ -156,7 +156,7 @@ function FieldInput({ field, value, onChange, document, registry }: FieldProps) 
           id={id}
           type={field.type === "date" ? "date" : "datetime-local"}
           value={asStr(value)}
-          onChange={(e) => onChange(e.currentTarget.value)}
+          onChange={(event) => onChange(event.currentTarget.value)}
           readOnly={disabled}
         />
       );
@@ -165,9 +165,9 @@ function FieldInput({ field, value, onChange, document, registry }: FieldProps) 
       return (
         <Flex as="label" align="center" gap={3}>
           {field.options?.layout === "checkbox" ? (
-            <Checkbox checked={value === true} onChange={(e) => onChange(e.currentTarget.checked)} disabled={disabled} />
+            <Checkbox checked={value === true} onChange={(event) => onChange(event.currentTarget.checked)} disabled={disabled} />
           ) : (
-            <Switch checked={value === true} onChange={(e) => onChange(e.currentTarget.checked)} disabled={disabled} />
+            <Switch checked={value === true} onChange={(event) => onChange(event.currentTarget.checked)} disabled={disabled} />
           )}
           <Text size={1} muted>
             {value === true ? "On" : "Off"}
@@ -184,7 +184,7 @@ function FieldInput({ field, value, onChange, document, registry }: FieldProps) 
             <TextInput
               id={id}
               value={current}
-              onChange={(e) => onChange({ _type: "slug", current: e.currentTarget.value })}
+              onChange={(event) => onChange({ _type: "slug", current: event.currentTarget.value })}
               readOnly={disabled}
             />
           </Box>
@@ -214,14 +214,14 @@ function FieldInput({ field, value, onChange, document, registry }: FieldProps) 
       );
 
     case "reference": {
-      const targets = (Array.isArray(field.to) ? field.to : field.to ? [field.to] : []).map((t) => t.type);
+      const targets = (Array.isArray(field.to) ? field.to : field.to ? [field.to] : []).map((target) => target.type);
       return (
         <TextInput
           id={id}
           icon={SearchIcon}
           placeholder={`Search for ${targets.join(", ") || "documents"}…`}
           value={asStr(asObj(value)._ref)}
-          onChange={(e) => onChange(e.currentTarget.value ? { _type: "reference", _ref: e.currentTarget.value } : undefined)}
+          onChange={(event) => onChange(event.currentTarget.value ? { _type: "reference", _ref: event.currentTarget.value } : undefined)}
           readOnly={disabled}
         />
       );
@@ -238,7 +238,6 @@ function FieldInput({ field, value, onChange, document, registry }: FieldProps) 
       return <ArrayInput field={field} value={value} onChange={onChange} document={document} registry={registry} />;
 
     default: {
-      // A type exported elsewhere in the editor (e.g. a shared `seo` object).
       const named = registry.get(field.type);
       if (named?.fields) {
         return (
@@ -258,9 +257,9 @@ function FieldInput({ field, value, onChange, document, registry }: FieldProps) 
   }
 }
 
-function PortableTextInput({ value, onChange }: { value: Value; onChange: (v: Value) => void }) {
+function PortableTextInput({ value, onChange }: { value: Value; onChange: (nextValue: Value) => void }) {
   const blocks = Array.isArray(value) ? (value as { children?: { text?: string }[] }[]) : [];
-  const text = blocks.map((b) => b.children?.map((c) => c.text ?? "").join("") ?? "").join("\n\n");
+  const text = blocks.map((block) => block.children?.map((child) => child.text ?? "").join("") ?? "").join("\n\n");
 
   return (
     <Card border radius={2} overflow="hidden">
@@ -274,14 +273,14 @@ function PortableTextInput({ value, onChange }: { value: Value; onChange: (v: Va
         rows={6}
         placeholder="Empty"
         value={text}
-        onChange={(e) =>
+        onChange={(event) =>
           onChange(
-            e.currentTarget.value.split(/\n{2,}/).map((para, i) => ({
+            event.currentTarget.value.split(/\n{2,}/).map((paragraph, paragraphIndex) => ({
               _type: "block",
-              _key: `b${i}`,
+              _key: `b${paragraphIndex}`,
               style: "normal",
               markDefs: [],
-              children: [{ _type: "span", _key: `s${i}`, text: para, marks: [] }],
+              children: [{ _type: "span", _key: `s${paragraphIndex}`, text: paragraph, marks: [] }],
             })),
           )
         }
@@ -290,23 +289,22 @@ function PortableTextInput({ value, onChange }: { value: Value; onChange: (v: Va
   );
 }
 
-// Array members of these types are stored as plain values; everything else
-// (image, file, reference, object, custom types) is stored as an object with a `_key`.
 const PRIMITIVE_TYPES = new Set(["string", "text", "number", "boolean", "date", "datetime", "url", "email"]);
 
 function ArrayInput({ field, value, onChange, document, registry }: Omit<FieldProps, "parent">) {
   const members = field.of ?? [];
-  if (members.some((m) => m.type === "block")) {
+  if (members.some((member) => member.type === "block")) {
     return <PortableTextInput value={value} onChange={onChange} />;
   }
 
   const items = Array.isArray(value) ? value : [];
   const memberFor = (item: Value) => {
-    const t = asObj(item)._type;
-    return members.find((m) => m.name === t || m.type === t) ?? members[0];
+    const itemType = asObj(item)._type;
+    return members.find((member) => member.name === itemType || member.type === itemType) ?? members[0];
   };
-  const update = (index: number, next: Value) => onChange(items.map((it, i) => (i === index ? next : it)));
-  const remove = (index: number) => onChange(items.filter((_, i) => i !== index));
+  const update = (index: number, next: Value) =>
+    onChange(items.map((item, itemIndex) => (itemIndex === index ? next : item)));
+  const remove = (index: number) => onChange(items.filter((_item, itemIndex) => itemIndex !== index));
   const add = (member: FieldDef) => {
     const key = crypto.randomUUID().slice(0, 8);
     onChange([...items, PRIMITIVE_TYPES.has(member.type) ? "" : { _key: key, _type: member.name ?? member.type }]);
@@ -345,14 +343,14 @@ function ArrayInput({ field, value, onChange, document, registry }: Omit<FieldPr
         );
       })}
       <Flex gap={2} wrap="wrap">
-        {members.map((m) => (
+        {members.map((member) => (
           <Button
-            key={m.name ?? m.type}
+            key={member.name ?? member.type}
             mode="ghost"
             icon={AddIcon}
-            text={members.length > 1 ? `Add ${m.title ?? startCase(m.name ?? m.type)}` : "Add item"}
+            text={members.length > 1 ? `Add ${member.title ?? startCase(member.name ?? member.type)}` : "Add item"}
             fontSize={1}
-            onClick={() => add(m)}
+            onClick={() => add(member)}
             style={{ flex: members.length > 1 ? undefined : 1 }}
           />
         ))}
@@ -370,14 +368,14 @@ function FieldList({
 }: {
   fields: FieldDef[];
   value: Obj;
-  onChange: (v: Obj) => void;
+  onChange: (nextValue: Obj) => void;
   document: Obj;
   registry: Registry;
 }) {
   return (
     <Stack gap={5}>
       {fields
-        .filter((f) => !isHidden(f, document, value))
+        .filter((field) => !isHidden(field, document, value))
         .map((field) => {
           const fieldValue = value[field.name] ?? (typeof field.initialValue !== "function" ? field.initialValue : undefined);
           return (
@@ -409,28 +407,28 @@ export function SchemaForm({
   type: TypeDef;
   types: TypeDef[];
   value: Obj;
-  onChange: (v: Obj) => void;
+  onChange: (nextValue: Obj) => void;
 }) {
-  const registry: Registry = new Map(types.map((t) => [t.name, t]));
+  const registry: Registry = new Map(types.map((typeDef) => [typeDef.name, typeDef]));
   const groups = type.groups ?? [];
-  const defaultGroup = groups.find((g) => g.default)?.name ?? "all";
+  const defaultGroup = groups.find((group) => group.default)?.name ?? "all";
   const [activeGroup, setActiveGroup] = useState<string | undefined>(undefined);
-  const current = activeGroup && (activeGroup === "all" || groups.some((g) => g.name === activeGroup)) ? activeGroup : defaultGroup;
+  const current = activeGroup && (activeGroup === "all" || groups.some((group) => group.name === activeGroup)) ? activeGroup : defaultGroup;
 
-  const fields = (type.fields ?? []).filter((f) => current === "all" || inGroup(f, current));
+  const fields = (type.fields ?? []).filter((field) => current === "all" || inGroup(field, current));
 
   return (
     <Stack gap={5}>
       {groups.length > 0 && (
         <TabList gap={1}>
-          {[{ name: "all", title: "All fields" }, ...groups].map((g) => (
+          {[{ name: "all", title: "All fields" }, ...groups].map((group) => (
             <Tab
-              key={g.name}
-              id={`tab-${g.name}`}
+              key={group.name}
+              id={`tab-${group.name}`}
               aria-controls="schema-form-panel"
-              label={g.title ?? startCase(g.name)}
-              selected={current === g.name}
-              onClick={() => setActiveGroup(g.name)}
+              label={group.title ?? startCase(group.name)}
+              selected={current === group.name}
+              onClick={() => setActiveGroup(group.name)}
             />
           ))}
         </TabList>

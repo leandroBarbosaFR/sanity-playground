@@ -47,20 +47,20 @@ function writeStored(key: string, value: string) {
   try {
     localStorage.setItem(key, value);
   } catch {
-    // Storage can be unavailable (private mode); the editor still works.
+    // Storage can be unavailable in private mode.
   }
 }
 
-function useDebounced<T>(value: T, ms: number) {
+function useDebounced<DebouncedValue>(value: DebouncedValue, delayMs: number) {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {
-    const t = setTimeout(() => setDebounced(value), ms);
-    return () => clearTimeout(t);
-  }, [value, ms]);
+    const timeoutId = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(timeoutId);
+  }, [value, delayMs]);
   return debounced;
 }
 
-const errorMessage = (err: unknown) => (err instanceof Error ? err.message : String(err));
+const errorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 export function SchemaPlayground() {
   const [code, setCode] = useState(() => readStored(STORAGE.schema, STARTER_SCHEMA));
@@ -78,36 +78,33 @@ export function SchemaPlayground() {
   useEffect(() => writeStored(STORAGE.component, debouncedComponent), [debouncedComponent]);
   useEffect(() => writeStored(STORAGE.savedComponent, savedComponent), [savedComponent]);
 
-  // Keep rendering the last schema that evaluated cleanly while the user types.
   const [lastGood, setLastGood] = useState<EvaluatedSchema>();
   const result = useMemo(() => {
     try {
       return { schema: evaluateSchema(debouncedCode), error: undefined };
-    } catch (err) {
-      return { schema: undefined, error: errorMessage(err) };
+    } catch (error) {
+      return { schema: undefined, error: errorMessage(error) };
     }
   }, [debouncedCode]);
   if (result.schema && result.schema !== lastGood) setLastGood(result.schema);
   const schema = result.schema ?? lastGood;
 
-  // The component only changes on save, so a half-typed edit never breaks the preview.
   const compiled = useMemo(() => {
     try {
       return { Preview: evaluateComponent(savedComponent), error: undefined };
-    } catch (err) {
-      return { Preview: undefined, error: errorMessage(err) };
+    } catch (error) {
+      return { Preview: undefined, error: errorMessage(error) };
     }
   }, [savedComponent]);
 
   const candidates = schema ? (schema.documents.length > 0 ? schema.documents : schema.types) : [];
-  const type = candidates.find((t) => t.name === selectedType) ?? candidates[0];
-  // Static `initialValue`s show up in the JSON and preview, not just the form.
+  const type = candidates.find((candidate) => candidate.name === selectedType) ?? candidates[0];
   const docValue = useMemo(() => {
     if (!type) return {};
     const defaults = Object.fromEntries(
       (type.fields ?? [])
-        .filter((f) => f.initialValue !== undefined && typeof f.initialValue !== "function")
-        .map((f) => [f.name, f.initialValue]),
+        .filter((field) => field.initialValue !== undefined && typeof field.initialValue !== "function")
+        .map((field) => [field.name, field.initialValue]),
     );
     return { ...defaults, ...(values[type.name] ?? {}) };
   }, [type, values]);
@@ -143,17 +140,17 @@ export function SchemaPlayground() {
           <Card scheme="dark" borderBottom paddingX={3} paddingY={2}>
             <Flex align="center" justify="space-between" gap={2}>
               <TabList gap={1}>
-                {FILES.map((f) => (
+                {FILES.map((file) => (
                   <Tab
-                    key={f.id}
-                    id={`file-${f.id}`}
-                    aria-controls={`editor-${f.id}`}
+                    key={file.id}
+                    id={`file-${file.id}`}
+                    aria-controls={`editor-${file.id}`}
                     icon={CodeIcon}
-                    label={f.id === "component" && unsaved ? `${f.name} ●` : f.name}
+                    label={file.id === "component" && unsaved ? `${file.name} ●` : file.name}
                     fontSize={1}
                     padding={2}
-                    selected={activeFile === f.id}
-                    onClick={() => setActiveFile(f.id)}
+                    selected={activeFile === file.id}
+                    onClick={() => setActiveFile(file.id)}
                   />
                 ))}
               </TabList>
@@ -189,9 +186,9 @@ export function SchemaPlayground() {
             flex={1}
             hidden={activeFile !== "component"}
             style={{ minHeight: 0, overflow: "auto" }}
-            onKeyDownCapture={(e) => {
-              if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
-                e.preventDefault();
+            onKeyDownCapture={(event) => {
+              if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
+                event.preventDefault();
                 save();
               }
             }}
@@ -226,10 +223,10 @@ export function SchemaPlayground() {
                   <DocumentIcon />
                 </Text>
                 {candidates.length > 1 ? (
-                  <Select fontSize={1} padding={2} value={type?.name} onChange={(e) => setSelectedType(e.currentTarget.value)}>
-                    {candidates.map((t) => (
-                      <option key={t.name} value={t.name}>
-                        {t.title ?? t.name}
+                  <Select fontSize={1} padding={2} value={type?.name} onChange={(event) => setSelectedType(event.currentTarget.value)}>
+                    {candidates.map((candidate) => (
+                      <option key={candidate.name} value={candidate.name}>
+                        {candidate.title ?? candidate.name}
                       </option>
                     ))}
                   </Select>
@@ -246,16 +243,16 @@ export function SchemaPlayground() {
               </Flex>
               <Flex gap={2}>
                 <TabList gap={1}>
-                  {VIEWS.map((v) => (
+                  {VIEWS.map((viewOption) => (
                     <Tab
-                      key={v.id}
-                      id={`view-${v.id}`}
+                      key={viewOption.id}
+                      id={`view-${viewOption.id}`}
                       aria-controls="playground-view"
-                      label={v.label}
+                      label={viewOption.label}
                       fontSize={1}
                       padding={2}
-                      selected={view === v.id}
-                      onClick={() => setView(v.id)}
+                      selected={view === viewOption.id}
+                      onClick={() => setView(viewOption.id)}
                     />
                   ))}
                 </TabList>
@@ -327,7 +324,6 @@ export function SchemaPlayground() {
                       </Card>
                     )}
                   >
-                    {/* Icons imported by component.tsx load lazily. */}
                     <Suspense
                       fallback={
                         <Flex justify="center" padding={5}>
@@ -351,7 +347,7 @@ export function SchemaPlayground() {
                   type={type}
                   types={schema?.types ?? []}
                   value={docValue}
-                  onChange={(next) => setValues((all) => ({ ...all, [type.name]: next }))}
+                  onChange={(next) => setValues((allValues) => ({ ...allValues, [type.name]: next }))}
                 />
               </Stack>
             )}

@@ -9,15 +9,13 @@ import { assetUrl } from "./image-input";
 
 export type PreviewProps = {
   data: Record<string, unknown>;
-  /** Returns a displayable URL for an image or file value. */
   urlFor: (source: unknown) => string;
 };
 
-const kebab = (s: string) => s.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
+const kebab = (text: string) => text.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
 
-// `AddIcon` (root import) and `@sanity/icons/Add` both resolve to icons["add"].
 const iconFor = (name: string) => icons[kebab(name.replace(/Icon$/, "")) as keyof typeof icons];
-const iconsModule = new Proxy({}, { get: (_, name) => (typeof name === "string" ? iconFor(name) : undefined) });
+const iconsModule = new Proxy({}, { get: (_target, name) => (typeof name === "string" ? iconFor(name) : undefined) });
 
 function componentRequire(id: string) {
   if (id === "react") return React;
@@ -39,7 +37,7 @@ export function evaluateComponent(code: string): ComponentType<PreviewProps> {
   const mod = { exports: {} as Record<string, unknown> };
   new Function("require", "module", "exports", "React", js)(componentRequire, mod, mod.exports, React);
 
-  const exported = mod.exports.default ?? Object.values(mod.exports).find((v) => typeof v === "function");
+  const exported = mod.exports.default ?? Object.values(mod.exports).find((exportedValue) => typeof exportedValue === "function");
   if (typeof exported !== "function") {
     throw new Error("Export a component, e.g. `export default function Preview({ data }) { ... }`");
   }
@@ -50,8 +48,6 @@ export const urlFor = (source: unknown) => assetUrl(source);
 
 type BoundaryProps = { resetKey: unknown; children: ReactNode; fallback: (error: Error) => ReactNode };
 
-// Catches runtime errors thrown while rendering the user's component, and
-// clears them as soon as the code or the data changes.
 export class PreviewErrorBoundary extends Component<BoundaryProps, { error?: Error; resetKey: unknown }> {
   state: { error?: Error; resetKey: unknown } = { resetKey: this.props.resetKey };
 

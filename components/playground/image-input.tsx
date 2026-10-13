@@ -9,9 +9,6 @@ import { UploadIcon } from "@sanity/icons/Upload";
 import { Box, Button, Card, Flex, Stack, Text, TextInput } from "@sanity/ui";
 import { asObj, asStr, type Value } from "./field-utils";
 
-// The playground isn't connected to a Sanity project, so assets stay in the
-// browser: the value keeps Sanity's image/file shape and carries the local
-// URL in `_previewUrl` for the form and the preview to display.
 export type LocalAsset = {
   _type: "image" | "file";
   asset: { _type: "reference"; _ref: string };
@@ -38,7 +35,7 @@ export function ImageInput({
 }: {
   kind: "image" | "file";
   value: Value;
-  onChange: (v: Value) => void;
+  onChange: (nextValue: Value) => void;
   disabled?: boolean;
 }) {
   const fileInput = useRef<HTMLInputElement>(null);
@@ -52,7 +49,6 @@ export function ImageInput({
 
   const replace = (next: LocalAsset | undefined) => {
     if (url.startsWith("blob:")) URL.revokeObjectURL(url);
-    // Keep sub-fields like `alt` or `caption` when the asset changes.
     const rest = Object.fromEntries(
       Object.entries(current).filter(([key]) => !["_previewUrl", "asset", "_fileName"].includes(key)),
     );
@@ -69,16 +65,16 @@ export function ImageInput({
     replace(toAsset(kind, URL.createObjectURL(file), file.name));
   };
 
-  const onDrop = (e: DragEvent) => {
-    e.preventDefault();
+  const onDrop = (event: DragEvent) => {
+    event.preventDefault();
     setDragging(false);
-    if (!disabled) acceptFile(e.dataTransfer.files[0]);
+    if (!disabled) acceptFile(event.dataTransfer.files[0]);
   };
 
-  const onPaste = (e: ClipboardEvent) => {
-    const file = Array.from(e.clipboardData.files)[0];
+  const onPaste = (event: ClipboardEvent) => {
+    const file = Array.from(event.clipboardData.files)[0];
     if (file && !disabled) {
-      e.preventDefault();
+      event.preventDefault();
       acceptFile(file);
     }
   };
@@ -101,9 +97,9 @@ export function ImageInput({
       type="file"
       accept={kind === "image" ? "image/*" : undefined}
       hidden
-      onChange={(e) => {
-        acceptFile(e.currentTarget.files?.[0]);
-        e.currentTarget.value = "";
+      onChange={(event) => {
+        acceptFile(event.currentTarget.files?.[0]);
+        event.currentTarget.value = "";
       }}
     />
   );
@@ -155,8 +151,8 @@ export function ImageInput({
         tone={dragging ? "primary" : "transparent"}
         style={{ borderStyle: "dashed" }}
         tabIndex={disabled ? undefined : 0}
-        onDragOver={(e) => {
-          e.preventDefault();
+        onDragOver={(event) => {
+          event.preventDefault();
           setDragging(true);
         }}
         onDragLeave={() => setDragging(false)}
@@ -174,7 +170,7 @@ export function ImageInput({
           </Flex>
           <Flex gap={2}>
             <Button mode="ghost" icon={UploadIcon} text="Upload" fontSize={1} disabled={disabled} onClick={() => fileInput.current?.click()} />
-            <Button mode="ghost" icon={LinkIcon} text="From URL" fontSize={1} disabled={disabled} selected={urlMode} onClick={() => setUrlMode((m) => !m)} />
+            <Button mode="ghost" icon={LinkIcon} text="From URL" fontSize={1} disabled={disabled} selected={urlMode} onClick={() => setUrlMode((isUrlMode) => !isUrlMode)} />
           </Flex>
         </Flex>
       </Card>
@@ -186,8 +182,8 @@ export function ImageInput({
               type="url"
               placeholder="https://…"
               value={urlDraft}
-              onChange={(e) => setUrlDraft(e.currentTarget.value)}
-              onKeyDown={(e) => e.key === "Enter" && submitUrl()}
+              onChange={(event) => setUrlDraft(event.currentTarget.value)}
+              onKeyDown={(event) => event.key === "Enter" && submitUrl()}
             />
           </Box>
           <Button text="Add" onClick={submitUrl} />

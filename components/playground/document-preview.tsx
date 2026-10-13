@@ -8,12 +8,12 @@ import type { FieldDef, TypeDef } from "./evaluate-schema";
 import { assetUrl } from "./image-input";
 import { asObj, asStr, isHidden, listOptions, startCase, type Obj, type Registry, type Value } from "./field-utils";
 
-const isEmpty = (v: Value) =>
-  v === undefined ||
-  v === null ||
-  v === "" ||
-  (Array.isArray(v) && v.length === 0) ||
-  (typeof v === "object" && !Array.isArray(v) && Object.keys(v as Obj).filter((k) => !k.startsWith("_")).length === 0);
+const isEmpty = (value: Value) =>
+  value === undefined ||
+  value === null ||
+  value === "" ||
+  (Array.isArray(value) && value.length === 0) ||
+  (typeof value === "object" && !Array.isArray(value) && Object.keys(value as Obj).filter((key) => !key.startsWith("_")).length === 0);
 
 function formatDate(value: string, withTime: boolean) {
   const date = new Date(value);
@@ -21,23 +21,22 @@ function formatDate(value: string, withTime: boolean) {
   return date.toLocaleString(undefined, withTime ? { dateStyle: "long", timeStyle: "short" } : { dateStyle: "long" });
 }
 
-// Picks the field that reads as the page heading: `title`, then `name`, then the first plain string.
 function headingField(fields: FieldDef[]) {
-  const plain = fields.filter((f) => f.type === "string" && !f.options?.list);
-  return plain.find((f) => f.name === "title") ?? plain.find((f) => f.name === "name") ?? plain[0];
+  const plain = fields.filter((field) => field.type === "string" && !field.options?.list);
+  return plain.find((field) => field.name === "title") ?? plain.find((field) => field.name === "name") ?? plain[0];
 }
 
 function PortableTextPreview({ value }: { value: Value }) {
   const blocks = Array.isArray(value) ? (value as { _key?: string; style?: string; children?: { text?: string }[] }[]) : [];
   return (
     <Stack gap={4}>
-      {blocks.map((block, i) => {
-        const text = block.children?.map((c) => c.text ?? "").join("") ?? "";
+      {blocks.map((block, blockIndex) => {
+        const text = block.children?.map((child) => child.text ?? "").join("") ?? "";
         if (!text) return null;
-        if (block.style === "h2") return <Heading key={block._key ?? i} size={2}>{text}</Heading>;
-        if (block.style === "h3") return <Heading key={block._key ?? i} size={1}>{text}</Heading>;
+        if (block.style === "h2") return <Heading key={block._key ?? blockIndex} size={2}>{text}</Heading>;
+        if (block.style === "h3") return <Heading key={block._key ?? blockIndex} size={1}>{text}</Heading>;
         return (
-          <Text key={block._key ?? i} size={2} style={{ lineHeight: 1.7 }}>
+          <Text key={block._key ?? blockIndex} size={2} style={{ lineHeight: 1.7 }}>
             {text}
           </Text>
         );
@@ -49,7 +48,7 @@ function PortableTextPreview({ value }: { value: Value }) {
 function ValuePreview({ field, value, registry }: { field: FieldDef; value: Value; registry: Registry }): ReactNode {
   switch (field.type) {
     case "string": {
-      const option = listOptions(field).find((o) => o.value === value);
+      const option = listOptions(field).find((option) => option.value === value);
       if (option) return <Badge tone="primary">{option.title}</Badge>;
       return <Text size={2}>{asStr(value)}</Text>;
     }
@@ -123,41 +122,39 @@ function ValuePreview({ field, value, registry }: { field: FieldDef; value: Valu
         </Inline>
       );
     case "array": {
-      if (field.of?.some((m) => m.type === "block")) return <PortableTextPreview value={value} />;
+      if (field.of?.some((member) => member.type === "block")) return <PortableTextPreview value={value} />;
       const items = Array.isArray(value) ? value : [];
-      if (items.every((it) => typeof it !== "object")) {
+      if (items.every((item) => typeof item !== "object")) {
         return (
           <Inline gap={2}>
-            {items.filter((it) => asStr(it)).map((it, i) => (
-              <Badge key={i}>{asStr(it)}</Badge>
+            {items.filter((item) => asStr(item)).map((item, itemIndex) => (
+              <Badge key={itemIndex}>{asStr(item)}</Badge>
             ))}
           </Inline>
         );
       }
       const memberOf = (item: Value) => {
-        const t = asObj(item)._type;
-        return field.of?.find((m) => m.name === t || m.type === t) ?? field.of?.[0];
+        const itemType = asObj(item)._type;
+        return field.of?.find((member) => member.name === itemType || member.type === itemType) ?? field.of?.[0];
       };
-      // A gallery: arrays whose items are all images render as an image grid.
-      if (items.every((it) => memberOf(it)?.type === "image")) {
+      if (items.every((item) => memberOf(item)?.type === "image")) {
         return (
           <Grid columns={[1, 2, 3]} gap={3}>
             {items
-              .filter((it) => assetUrl(it))
-              .map((it, i) => (
-                <ValuePreview key={asStr(asObj(it)._key) || i} field={memberOf(it)!} value={it} registry={registry} />
+              .filter((item) => assetUrl(item))
+              .map((item, itemIndex) => (
+                <ValuePreview key={asStr(asObj(item)._key) || itemIndex} field={memberOf(item)!} value={item} registry={registry} />
               ))}
           </Grid>
         );
       }
       return (
         <Stack gap={3}>
-          {items.map((item, i) => {
-            const t = asObj(item)._type;
-            const member = field.of?.find((m) => m.name === t || m.type === t) ?? field.of?.[0];
+          {items.map((item, itemIndex) => {
+            const member = memberOf(item);
             const fields = member?.fields ?? (member && registry.get(member.type)?.fields) ?? [];
             return (
-              <Card key={asStr(asObj(item)._key) || i} border radius={2} padding={4}>
+              <Card key={asStr(asObj(item)._key) || itemIndex} border radius={2} padding={4}>
                 <FieldsPreview fields={fields} value={asObj(item)} document={asObj(item)} registry={registry} />
               </Card>
             );
@@ -178,7 +175,7 @@ function ValuePreview({ field, value, registry }: { field: FieldDef; value: Valu
 }
 
 function FieldsPreview({ fields, value, document, registry }: { fields: FieldDef[]; value: Obj; document: Obj; registry: Registry }) {
-  const visible = fields.filter((f) => !isHidden(f, document, value) && !isEmpty(value[f.name]));
+  const visible = fields.filter((field) => !isHidden(field, document, value) && !isEmpty(value[field.name]));
   if (visible.length === 0) return null;
   return (
     <Stack gap={5}>
@@ -195,12 +192,12 @@ function FieldsPreview({ fields, value, document, registry }: { fields: FieldDef
 }
 
 export function DocumentPreview({ type, types, value }: { type: TypeDef; types: TypeDef[]; value: Obj }) {
-  const registry: Registry = new Map(types.map((t) => [t.name, t]));
-  const fields = (type.fields ?? []).filter((f) => !isHidden(f, value, value));
+  const registry: Registry = new Map(types.map((typeDef) => [typeDef.name, typeDef]));
+  const fields = (type.fields ?? []).filter((field) => !isHidden(field, value, value));
   const heading = headingField(fields);
   const title = heading ? asStr(value[heading.name]) : "";
-  const rest = fields.filter((f) => f !== heading);
-  const hasContent = fields.some((f) => !isEmpty(value[f.name]));
+  const rest = fields.filter((field) => field !== heading);
+  const hasContent = fields.some((field) => !isEmpty(value[field.name]));
 
   if (!hasContent) {
     return (

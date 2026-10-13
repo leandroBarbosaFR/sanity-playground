@@ -35,13 +35,10 @@ export type EvaluatedSchema = {
   documents: TypeDef[];
 };
 
-// The playground evaluates code the user typed in their own browser, so
-// `sanity` and `@sanity/icons` are stubbed: define* helpers are identities
-// and every icon resolves to the same placeholder.
 const sanityStub = {
-  defineType: <T,>(def: T) => def,
-  defineField: <T,>(def: T) => def,
-  defineArrayMember: <T,>(def: T) => def,
+  defineType: <Definition,>(definition: Definition) => definition,
+  defineField: <Definition,>(definition: Definition) => definition,
+  defineArrayMember: <Definition,>(definition: Definition) => definition,
 };
 const iconsStub = new Proxy({}, { get: () => () => null });
 
@@ -58,7 +55,7 @@ function readRules(validation: unknown): FieldRules {
   const rule: unknown = new Proxy(
     {},
     {
-      get: (_, method) =>
+      get: (_target, method) =>
         (...args: unknown[]) => {
           if (method === "required") rules.required = true;
           if (method === "min" && typeof args[0] === "number") rules.min = args[0];
@@ -70,7 +67,7 @@ function readRules(validation: unknown): FieldRules {
   try {
     validation(rule);
   } catch {
-    // Custom validators may touch APIs the stub doesn't model; ignore them.
+    // Custom validators may use APIs the stub doesn't model.
   }
   return rules;
 }
@@ -80,28 +77,28 @@ function normalize(raw: Record<string, unknown>): FieldDef {
   return {
     ...def,
     name: def.name ?? def.type,
-    fields: Array.isArray(def.fields) ? def.fields.map((f) => normalize(f as never)) : undefined,
-    of: Array.isArray(def.of) ? def.of.map((f) => normalize(f as never)) : undefined,
+    fields: Array.isArray(def.fields) ? def.fields.map((childField) => normalize(childField as never)) : undefined,
+    of: Array.isArray(def.of) ? def.of.map((member) => normalize(member as never)) : undefined,
     rules: readRules(def.validation),
   };
 }
 
-const isTypeDef = (v: unknown): v is Record<string, unknown> =>
-  typeof v === "object" &&
-  v !== null &&
-  typeof (v as { name?: unknown }).name === "string" &&
-  typeof (v as { type?: unknown }).type === "string";
+const isTypeDef = (candidate: unknown): candidate is Record<string, unknown> =>
+  typeof candidate === "object" &&
+  candidate !== null &&
+  typeof (candidate as { name?: unknown }).name === "string" &&
+  typeof (candidate as { type?: unknown }).type === "string";
 
 export function evaluateSchema(code: string): EvaluatedSchema {
   const { code: js } = transform(code, { transforms: ["typescript", "imports"] });
   const mod = { exports: {} as Record<string, unknown> };
   new Function("require", "module", "exports", js)(fakeRequire, mod, mod.exports);
 
-  const exported = Object.values(mod.exports).flatMap((v) => (Array.isArray(v) ? v : [v]));
-  const types = exported.filter(isTypeDef).map((t) => normalize(t) as TypeDef);
+  const exported = Object.values(mod.exports).flatMap((exportedValue) => (Array.isArray(exportedValue) ? exportedValue : [exportedValue]));
+  const types = exported.filter(isTypeDef).map((typeDef) => normalize(typeDef) as TypeDef);
   if (types.length === 0) {
     throw new Error("Export at least one type, e.g. `export const post = defineType({ ... })`");
   }
 
-  return { types, documents: types.filter((t) => t.type === "document") };
+  return { types, documents: types.filter((typeDef) => typeDef.type === "document") };
 }
