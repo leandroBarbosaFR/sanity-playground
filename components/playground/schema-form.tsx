@@ -2,13 +2,9 @@
 
 import { useState, type ReactNode } from "react";
 import { AddIcon } from "@sanity/icons/Add";
-import { BoldIcon } from "@sanity/icons/Bold";
-import { ItalicIcon } from "@sanity/icons/Italic";
 import { LinkIcon } from "@sanity/icons/Link";
-import { OlistIcon } from "@sanity/icons/Olist";
 import { SearchIcon } from "@sanity/icons/Search";
 import { TrashIcon } from "@sanity/icons/Trash";
-import { UlistIcon } from "@sanity/icons/Ulist";
 import {
   Box,
   Button,
@@ -263,9 +259,6 @@ function FieldInput({ field, value, onChange, document, registry }: FieldProps) 
 }
 
 function PortableTextInput({ field, value, onChange }: { field: FieldDef; value: Value; onChange: (v: Value) => void }) {
-  const block = field.of?.find((m) => m.type === "block");
-  const styles = block?.styles ?? [{ title: "Normal", value: "normal" }, { title: "Heading 2", value: "h2" }, { title: "Heading 3", value: "h3" }, { title: "Quote", value: "blockquote" }];
-  const lists = block?.lists ?? [{ title: "Bullet", value: "bullet" }, { title: "Numbered", value: "number" }];
   const blocks = Array.isArray(value) ? (value as { children?: { text?: string }[] }[]) : [];
   const text = blocks.map((b) => b.children?.map((c) => c.text ?? "").join("") ?? "").join("\n\n");
 
